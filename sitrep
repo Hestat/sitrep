@@ -1,0 +1,95 @@
+#!/bin/bash
+
+#colors
+    black='\e[0;30m'
+    dgray='\e[1;30m'
+    lgray='\e[0;37m'
+    blue='\e[0;34m'
+    lblue='\e[1;34m'
+    green='\e[0;32m'
+    lgreen='\e[1;32m'
+    cyan='\e[0;36m'
+    lcyan='\e[1;36m'
+    red='\e[0;31m'
+    lred='\e[1;31m'
+    purple='\e[0;35m'
+    lpurple='\e[1;35m'
+    brown='\e[0;33m'
+    yellow='\e[1;33m'
+    white='\e[1;37m'
+    no='\e[0m'
+#report=/var/log/sitrep/report.log
+
+header(){
+	echo -e "==============================================================================\n"
+}
+
+#if [[ $(w | head -n1 |awk '{print$10}' | cut -d . -f1) >= 1 ]]; then
+
+header
+echo -e "$cyan:Hostname:$no"
+hostname
+echo -e "\n$cyan:Connected Users:$no"
+header
+w
+echo -e "\n$cyan:Last 10 connected users:$no"
+header
+last | head
+echo -e "\n$cyan:System Memory:$no"
+header
+free -hm
+echo -e "\n$cyan:Disk Space:$no"
+header
+df -h
+echo -e "\n$cyan:Top Memory Users:$no"
+header
+ps aux | awk '{print $6/1024 " MB\t\t" $11}' | sort -nr | head -n 20
+echo -e "\n$cyan:Top CPU processes:$no"
+header	
+ps -Ao user,uid,comm,pid,pcpu,pmem --sort=-pcpu | head -n 20
+echo -e "\n$cyan:Network listening processes:$no"
+header
+if [[ -e /etc/systemd ]];then
+	ss -tulanp
+else
+	netstat -tulapn
+fi
+echo -e "\n\n\n$cyan:Other Network traffic:$no"
+header
+if [[ -e /etc/systemd ]];then
+	ss -tunp
+else 
+	netstat -tunp
+fi
+
+if [[ -x $(which nginx) ]]; then
+	echo -e "\n$cyan:Nginx Status:$no"
+	header
+	curl http://127.0.0.1/nginx_status
+else
+header
+fi
+
+if [[ -x $(which apache2) ]]; then 
+	echo -e "\n$cyan:Apache Status:$no"
+	header
+	apachectl status
+else
+header
+fi
+
+if [[ -x $(which mysql) ]]; then
+	echo -e "\n$cyan:Mysql query stats:$no"
+	header
+	mysqladmin proc stat
+	echo -e "\n\n\n"
+	mysql -e 'show status;' |grep --color=never connect
+else
+header
+fi
+
+echo -e "\n$cyan:Running processes:$no"
+header
+ps fauwx
+header
+
